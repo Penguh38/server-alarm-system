@@ -72,7 +72,7 @@ public static readonly List<string> NotifiedFactions = new List<string>
 
 Standalone web panel for dispatchers — shows active alarms, property list, online units, and a terminal where you can test the commands live.
 
-→ https://your-deployment.vercel.app
+→ https://server-alarm-system.vercel.app
 
 ---
 
