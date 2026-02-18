@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AlarmSys — Dispatch Dashboard</title>
+  <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg:      #070a0f;
+      --bg2:     #0c1018;
+      --bg3:     #111824;
+      --border:  #1c2633;
+      --border2: #253345;
+      --text:    #c9d5e0;
+      --muted:   #445566;
+      --red:     #f85149;
+      --red-dim: rgba(248,81,73,0.1);
+      --orange:  #e08c2a;
+      --orange-dim: rgba(224,140,42,0.1);
+      --green:   #39d96a;
+      --green-dim: rgba(57,217,106,0.1);
+      --blue:    #4da6ff;
+      --blue-dim: rgba(77,166,255,0.08);
+      --purple:  #a371f7;
+      --mono: 'JetBrains Mono', monospace;
+      --head: 'Rajdhani', sans-serif;
+      --body: 'Inter', sans-serif;
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { background:var(--bg); color:var(--text); font-family:var(--body); min-height:100vh; font-size:13px; overflow:hidden; }
+
+    /* Header */
+    .header { height:52px; background:var(--bg2); border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; padding:0 20px; }
+    .logo { font-family:var(--head); font-size:1.3rem; font-weight:700; letter-spacing:4px; color:var(--blue); }
+    .logo em { color:var(--text); font-style:normal; }
+    .header-mid { font-family:var(--mono); font-size:0.6rem; color:var(--muted); letter-spacing:2px; text-transform:uppercase; }
+    .header-right { display:flex; align-items:center; gap:16px; }
+    .live-pill { display:flex; align-items:center; gap:6px; background:rgba(57,217,106,0.07); border:1px solid rgba(57,217,106,0.2); border-radius:20px; padding:4px 12px; font-family:var(--mono); font-size:0.58rem; color:var(--green); letter-spacing:2px; }
+    .live-dot { width:6px; height:6px; border-radius:50%; background:var(--green); animation:glow 2s infinite; }
+    @keyframes glow { 0%,100%{box-shadow:0 0 0 0 rgba(57,217,106,0.5)} 50%{box-shadow:0 0 0 5px rgba(57,217,106,0)} }
+    .clock { font-family:var(--mono); font-size:0.72rem; color:var(--muted); }
+
+    /* Stats */
+    .stats-row { display:grid; grid-template-columns:repeat(4,1fr); border-bottom:1px solid var(--border); }
+    .stat { padding:14px 20px; border-right:1px solid var(--border); }
+    .stat:last-child { border-right:none; }
+    .stat-label { font-family:var(--mono); font-size:0.55rem; letter-spacing:2px; text-transform:uppercase; color:var(--muted); margin-bottom:4px; }
+    .stat-value { font-family:var(--head); font-size:2rem; font-weight:700; line-height:1; }
+    .stat-value.red { color:var(--red); } .stat-value.green { color:var(--green); }
+    .stat-value.blue { color:var(--blue); } .stat-value.orange { color:var(--orange); }
+
+    /* Layout */
+    .layout { display:grid; grid-template-columns:255px 1fr 310px; height:calc(100vh - 52px - 65px); }
+
+    /* Sidebar */
+    .sidebar { background:var(--bg2); border-right:1px solid var(--border); display:flex; flex-direction:column; overflow:hidden; }
+    .sidebar-header { padding:10px 14px; border-bottom:1px solid var(--border); font-family:var(--mono); font-size:0.58rem; letter-spacing:2px; text-transform:uppercase; color:var(--muted); display:flex; justify-content:space-between; align-items:center; }
+    .badge { background:var(--bg3); border:1px solid var(--border2); border-radius:3px; padding:1px 7px; font-family:var(--mono); font-size:0.58rem; color:var(--text); }
+    .prop-list { overflow-y:auto; flex:1; }
+    .prop-item { padding:10px 14px 10px 18px; border-bottom:1px solid var(--border); cursor:pointer; transition:background 0.12s; position:relative; }
+    .prop-item::before { content:''; position:absolute; left:0; top:0; bottom:0; width:3px; border-radius:0 2px 2px 0; }
+    .prop-item.armed::before { background:var(--green); }
+    .prop-item.triggered::before { background:var(--red); animation:blink 0.8s infinite; }
+    .prop-item.disarmed::before { background:var(--orange); }
+    .prop-item.none::before { background:var(--muted); }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.1} }
+    .prop-item:hover { background:var(--bg3); }
+    .prop-item.active { background:rgba(77,166,255,0.07); }
+    .prop-name { font-family:var(--head); font-size:0.92rem; font-weight:600; margin-bottom:4px; }
+    .prop-row { display:flex; justify-content:space-between; align-items:center; }
+    .prop-owner { font-family:var(--mono); font-size:0.58rem; color:var(--muted); }
+    .status-tag { font-family:var(--mono); font-size:0.52rem; font-weight:700; letter-spacing:1.5px; text-transform:uppercase; padding:2px 6px; border-radius:2px; }
+    .status-tag.armed { color:var(--green); background:var(--green-dim); }
+    .status-tag.triggered { color:var(--red); background:var(--red-dim); }
+    .status-tag.disarmed { color:var(--orange); background:var(--orange-dim); }
+    .status-tag.none { color:var(--muted); background:rgba(68,85,102,0.15); }
+    .prop-brand { font-family:var(--mono); font-size:0.55rem; color:var(--blue); margin-top:3px; }
+
+    /* Feed */
+    .feed { display:flex; flex-direction:column; overflow:hidden; }
+    .feed-header { padding:10px 16px; border-bottom:1px solid var(--border); background:var(--bg2); display:flex; align-items:center; justify-content:space-between; font-family:var(--mono); font-size:0.58rem; letter-spacing:2px; text-transform:uppercase; color:var(--muted); }
+    .filter-group { display:flex; gap:4px; }
+    .filter-btn { padding:3px 10px; background:transparent; border:1px solid var(--border2); border-radius:3px; color:var(--muted); font-family:var(--mono); font-size:0.56rem; letter-spacing:1px; cursor:pointer; transition:all 0.12s; }
+    .filter-btn:hover,.filter-btn.active { background:var(--blue-dim); border-color:var(--blue); color:var(--blue); }
+    .feed-list { overflow-y:auto; flex:1; }
+    .event { display:grid; grid-template-columns:36px 1fr auto; gap:12px; align-items:start; padding:13px 16px; border-bottom:1px solid var(--border); transition:background 0.12s; animation:slideIn 0.25s ease; }
+    .event:hover { background:var(--bg2); }
+    @keyframes slideIn { from{opacity:0;transform:translateY(-5px)} to{opacity:1;transform:translateY(0)} }
+    .event.critical { border-left:3px solid var(--red); }
+    .event.resolved { border-left:3px solid var(--green); opacity:0.5; }
+    .event.info     { border-left:3px solid var(--blue); }
+    .event.system   { border-left:3px solid var(--purple); }
+    .event-icon { width:36px; height:36px; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:1rem; flex-shrink:0; }
+    .event-icon.critical { background:var(--red-dim); } .event-icon.resolved { background:var(--green-dim); }
+    .event-icon.info { background:var(--blue-dim); } .event-icon.system { background:rgba(163,113,247,0.1); }
+    .event-title { font-family:var(--head); font-weight:600; font-size:0.92rem; margin-bottom:4px; }
+    .hl-red { color:var(--red); } .hl-green { color:var(--green); } .hl-blue { color:var(--blue); } .hl-purple { color:var(--purple); }
+    .event-detail { font-family:var(--mono); font-size:0.58rem; color:var(--muted); line-height:1.9; }
+    .event-detail span { color:var(--text); }
+    .event-meta { display:flex; flex-direction:column; align-items:flex-end; gap:5px; }
+    .event-time { font-family:var(--mono); font-size:0.56rem; color:var(--muted); white-space:nowrap; }
+    .resolve-btn { padding:3px 10px; background:var(--green-dim); border:1px solid rgba(57,217,106,0.3); border-radius:3px; color:var(--green); font-family:var(--mono); font-size:0.56rem; letter-spacing:1px; cursor:pointer; transition:all 0.12s; white-space:nowrap; }
+    .resolve-btn:hover { background:var(--green); color:var(--bg); }
+
+    /* Right panel */
+    .right-panel { background:var(--bg2); border-left:1px solid var(--border); display:flex; flex-direction:column; overflow:hidden; }
+    .panel-tabs { display:flex; border-bottom:1px solid var(--border); }
+    .panel-tab { flex:1; padding:10px; text-align:center; font-family:var(--mono); font-size:0.56rem; letter-spacing:1.5px; text-transform:uppercase; color:var(--muted); cursor:pointer; border-bottom:2px solid transparent; transition:all 0.12s; }
+    .panel-tab.active { color:var(--blue); border-bottom-color:var(--blue); }
+    .panel-tab:hover { color:var(--text); }
+    .panel-content { overflow-y:auto; flex:1; }
+
+    /* Units */
+    .unit-item { padding:10px 14px; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:10px; }
+    .unit-dot { width:7px; height:7px; border-radius:50%; flex-shrink:0; }
+    .unit-dot.available { background:var(--green); }
+    .unit-dot.responding { background:var(--orange); animation:glow 1.5s infinite; }
+    .unit-dot.busy { background:var(--red); }
+    .unit-info { flex:1; min-width:0; }
+    .unit-name { font-family:var(--head); font-weight:600; font-size:0.88rem; }
+    .unit-rank { font-family:var(--mono); font-size:0.56rem; color:var(--muted); }
+    .unit-status-tag { font-family:var(--mono); font-size:0.54rem; font-weight:700; letter-spacing:1px; text-transform:uppercase; }
+    .unit-status-tag.available { color:var(--green); } .unit-status-tag.responding { color:var(--orange); } .unit-status-tag.busy { color:var(--red); }
+
+    /* Brands */
+    .brand-item { padding:11px 14px; border-bottom:1px solid var(--border); }
+    .brand-row { display:flex; justify-content:space-between; align-items:center; margin-bottom:3px; }
+    .brand-name { font-family:var(--head); font-size:0.9rem; font-weight:600; }
+    .brand-tier { font-family:var(--mono); font-size:0.52rem; font-weight:700; letter-spacing:1px; padding:2px 7px; border-radius:2px; text-transform:uppercase; }
+    .brand-tier.Basic    { background:rgba(68,85,102,0.25); color:var(--muted); }
+    .brand-tier.Standard { background:var(--blue-dim); color:var(--blue); }
+    .brand-tier.Advanced { background:var(--green-dim); color:var(--green); }
+    .brand-tier.Premium  { background:var(--orange-dim); color:var(--orange); }
+    .brand-tier.Elite    { background:var(--red-dim); color:var(--red); }
+    .brand-tier.Black    { background:rgba(163,113,247,0.1); color:var(--purple); }
+    .brand-stats { display:flex; gap:10px; font-family:var(--mono); font-size:0.56rem; color:var(--muted); margin-top:2px; }
+    .brand-stats span { color:var(--text); }
+    .brand-price { font-family:var(--mono); font-size:0.62rem; color:var(--green); font-weight:700; }
+    .brand-desc { font-family:var(--body); font-size:0.66rem; color:var(--muted); margin-top:4px; line-height:1.5; }
+
+    /* Terminal */
+    .terminal-section { border-top:1px solid var(--border); background:var(--bg); display:flex; flex-direction:column; flex-shrink:0; }
+    .terminal-header { padding:7px 14px; border-bottom:1px solid var(--border); font-family:var(--mono); font-size:0.56rem; letter-spacing:2px; text-transform:uppercase; color:var(--muted); display:flex; justify-content:space-between; align-items:center; }
+    .terminal-clear { font-family:var(--mono); font-size:0.54rem; color:var(--muted); background:transparent; border:1px solid var(--border2); border-radius:3px; padding:2px 8px; cursor:pointer; letter-spacing:1px; transition:all 0.12s; }
+    .terminal-clear:hover { color:var(--red); border-color:var(--red); }
+    .terminal-output { height:95px; overflow-y:auto; padding:7px 14px; font-family:var(--mono); font-size:0.62rem; line-height:1.8; }
+    .t-line { display:flex; gap:8px; }
+    .t-time { color:var(--muted); flex-shrink:0; }
+    .t-msg { color:var(--text); }
+    .t-msg.red { color:var(--red); } .t-msg.green { color:var(--green); } .t-msg.blue { color:var(--blue); }
+    .t-msg.orange { color:var(--orange); } .t-msg.purple { color:var(--purple); } .t-msg.muted { color:var(--muted); }
+    .terminal-input-row { display:flex; align-items:center; border-top:1px solid var(--border); padding:6px 14px; gap:8px; }
+    .terminal-prompt { font-family:var(--mono); font-size:0.68rem; color:var(--green); flex-shrink:0; }
+    .terminal-input { flex:1; background:transparent; border:none; outline:none; color:var(--text); font-family:var(--mono); font-size:0.68rem; caret-color:var(--green); }
+
+    /* Toasts */
+    .toasts { position:fixed; top:62px; right:16px; z-index:9999; display:flex; flex-direction:column; gap:8px; }
+    .toast { background:var(--bg2); border:1px solid var(--border2); border-left:4px solid var(--red); border-radius:4px; padding:10px 14px; min-width:250px; max-width:320px; box-shadow:0 8px 24px rgba(0,0,0,0.6); animation:tIn 0.25s ease; }
+    .toast.green { border-left-color:var(--green); } .toast.blue { border-left-color:var(--blue); }
+    @keyframes tIn { from{opacity:0;transform:translateX(10px)} to{opacity:1;transform:translateX(0)} }
+    .toast-title { font-family:var(--head); font-size:0.78rem; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:var(--red); margin-bottom:2px; }
+    .toast.green .toast-title { color:var(--green); } .toast.blue .toast-title { color:var(--blue); }
+    .toast-body { font-family:var(--mono); font-size:0.58rem; color:var(--muted); line-height:1.5; }
+
+    ::-webkit-scrollbar { width:3px; }
+    ::-webkit-scrollbar-track { background:transparent; }
+    ::-webkit-scrollbar-thumb { background:var(--border2); border-radius:2px; }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo">ALARM<em>SYS</em></div>
+  <div class="header-mid">Property Dispatch Dashboard</div>
+  <div class="header-right">
+    <div class="live-pill"><div class="live-dot"></div>LIVE</div>
+    <div class="clock" id="clock">--:--:--</div>
+  </div>
+</div>
+
+<div class="stats-row">
+  <div class="stat"><div class="stat-label">Active Alarms</div><div class="stat-value red" id="s-active">0</div></div>
+  <div class="stat"><div class="stat-label">Monitored Properties</div><div class="stat-value blue" id="s-props">0</div></div>
+  <div class="stat"><div class="stat-label">Units Online</div><div class="stat-value green" id="s-units">0</div></div>
+  <div class="stat"><div class="stat-label">Resolved Today</div><div class="stat-value orange" id="s-resolved">0</div></div>
+</div>
+
+<div class="layout">
+
+  <div class="sidebar">
+    <div class="sidebar-header">Properties <span class="badge" id="prop-count">0</span></div>
+    <div class="prop-list" id="prop-list"></div>
+  </div>
+
+  <div class="feed">
+    <div class="feed-header">
+      Dispatch Feed
+      <div class="filter-group">
+        <button class="filter-btn active" onclick="setFilter('all',this)">ALL</button>
+        <button class="filter-btn" onclick="setFilter('critical',this)">ALARMS</button>
+        <button class="filter-btn" onclick="setFilter('resolved',this)">RESOLVED</button>
+        <button class="filter-btn" onclick="setFilter('info',this)">SYSTEM</button>
+      </div>
+    </div>
+    <div class="feed-list" id="feed-list"></div>
+  </div>
+
+  <div class="right-panel">
+    <div class="panel-tabs">
+      <div class="panel-tab active" onclick="switchTab('units',this)">UNITS</div>
+      <div class="panel-tab" onclick="switchTab('brands',this)">BRANDS</div>
+    </div>
+    <div class="panel-content" id="panel-content"></div>
+    <div class="terminal-section">
+      <div class="terminal-header">Command Terminal <button class="terminal-clear" onclick="clearTerminal()">CLEAR</button></div>
+      <div class="terminal-output" id="terminal-output"></div>
+      <div class="terminal-input-row">
+        <span class="terminal-prompt">$</span>
+        <input class="terminal-input" id="terminal-input" placeholder="/help for commands" autocomplete="off" spellcheck="false"/>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="toasts" id="toasts"></div>
+
+<script>
+const BRANDS = {
+  SENTINEL: { name:"Sentinel Basic",  tier:"Basic",    price:500,   radius:8,  cooldown:120, desc:"Entry-level alarm. Standard range, slow response." },
+  GUARDIAN: { name:"Guardian Home",   tier:"Standard", price:1200,  radius:12, cooldown:90,  desc:"Reliable mid-range system. Good for residential." },
+  VIPER:    { name:"Viper Pro",       tier:"Advanced", price:2500,  radius:15, cooldown:60,  desc:"Fast detection, reduced cooldown, wider coverage." },
+  NEXUS:    { name:"Nexus Smart",     tier:"Premium",  price:4500,  radius:18, cooldown:45,  desc:"Smart alerts with priority dispatch routing." },
+  FORTRESS: { name:"Fortress Elite",  tier:"Elite",    price:8000,  radius:22, cooldown:30,  desc:"Maximum coverage, instant response, top-tier system." },
+  PHANTOM:  { name:"Phantom Stealth", tier:"Black",    price:15000, radius:28, cooldown:15,  desc:"Silent detection. Intruder unaware alarm was triggered." }
+};
+
+const properties = [
+  { id:1, name:"Vinewood Hills Villa",  owner:"Richardson_H", status:"triggered", brand:"NEXUS"    },
+  { id:2, name:"Del Perro Penthouse",   owner:"Marchetti_L",  status:"armed",     brand:"VIPER"    },
+  { id:3, name:"Mirror Park Residence", owner:"Okafor_T",     status:"armed",     brand:"GUARDIAN" },
+  { id:4, name:"Rockford Hills Estate", owner:"Chen_W",       status:"disarmed",  brand:"SENTINEL" },
+  { id:5, name:"Paleto Bay Warehouse",  owner:"Novak_J",      status:"armed",     brand:"FORTRESS" },
+  { id:6, name:"Sandy Shores Compound", owner:"Reyes_M",      status:"none",      brand:null       },
+];
+
+const units = [
+  { name:"Thompson_R", rank:"Sgt. | LSSD",     status:"responding" },
+  { name:"Park_S",     rank:"Dep. | LSSD",     status:"available"  },
+  { name:"Williams_D", rank:"Officer | LSPD",  status:"available"  },
+  { name:"Garcia_A",   rank:"Agent | ProTech", status:"busy"       },
+  { name:"Kowalski_P", rank:"Dep. | LSSD",     status:"responding" },
+  { name:"Nakamura_K", rank:"Officer | LSPD",  status:"available"  },
+];
+
+let events = [
+  { id:1, type:"critical", icon:"🚨", title:`Intruder Detected — <span class='hl-red'>Vinewood Hills Villa</span>`, detail:`SUSPECT: <span>Petrov_K</span> &nbsp;|&nbsp; BRAND: <span>NEXUS</span> &nbsp;|&nbsp; PROPERTY: <span>#1</span>`, time:"02:14:37", resolved:false },
+  { id:2, type:"system",   icon:"🔧", title:`Alarm Installed — <span class='hl-purple'>Paleto Bay Warehouse</span>`,  detail:`OWNER: <span>Novak_J</span> &nbsp;|&nbsp; BRAND: <span>FORTRESS</span> &nbsp;|&nbsp; PLAN: <span>$8,000/mo</span>`,  time:"02:11:05", resolved:false },
+  { id:3, type:"info",     icon:"🔐", title:`Alarm Armed — <span class='hl-blue'>Del Perro Penthouse</span>`,         detail:`OWNER: <span>Marchetti_L</span> &nbsp;|&nbsp; BRAND: <span>VIPER</span>`,                                         time:"02:09:22", resolved:false },
+  { id:4, type:"resolved", icon:"✅", title:`Alarm Resolved — <span class='hl-green'>Sandy Beach Loft</span>`,        detail:`CLEARED BY: <span>Thompson_R</span> &nbsp;|&nbsp; RESPONSE: <span>4m 12s</span>`,                                  time:"01:58:22", resolved:true  },
+  { id:5, type:"resolved", icon:"✅", title:`Alarm Resolved — <span class='hl-green'>Mirror Park Residence</span>`,   detail:`CLEARED BY: <span>Park_S</span> &nbsp;|&nbsp; RESPONSE: <span>2m 58s</span>`,                                      time:"01:30:47", resolved:true  },
+];
+
+let filter = 'all', resolvedCount = 2, nextId = 6, activeTab = 'units';
+const intruders = ["Petrov_K","Vasquez_R","Murphy_J","Sato_H","Brennan_T","Volkov_D","Nkosi_A","Laurent_P"];
+
+function renderProps() {
+  const l = document.getElementById('prop-list');
+  l.innerHTML = properties.map(p => {
+    const b = p.brand ? BRANDS[p.brand] : null;
+    return `<div class="prop-item ${p.status}" onclick="clickProp(${p.id},this)">
+      <div class="prop-name">${p.name}</div>
+      <div class="prop-row"><span class="prop-owner">${p.owner}</span><span class="status-tag ${p.status}">${p.status==='none'?'NO ALARM':p.status.toUpperCase()}</span></div>
+      ${b?`<div class="prop-brand">◈ ${b.name}</div>`:''}
+    </div>`;
+  }).join('');
+  document.getElementById('prop-count').textContent = properties.length;
+}
+
+function renderFeed() {
+  const l = document.getElementById('feed-list');
+  const f = filter==='all' ? events : events.filter(e=>e.type===filter);
+  l.innerHTML = f.map(e=>`
+    <div class="event ${e.type}" id="ev-${e.id}">
+      <div class="event-icon ${e.type}">${e.icon}</div>
+      <div><div class="event-title">${e.title}</div><div class="event-detail">${e.detail}</div></div>
+      <div class="event-meta">
+        <div class="event-time">${e.time}</div>
+        ${e.type==='critical'&&!e.resolved?`<button class="resolve-btn" onclick="resolveEvent(${e.id})">RESOLVE</button>`:''}
+      </div>
+    </div>`).join('');
+}
+
+function renderUnits() {
+  return units.map(u=>`
+    <div class="unit-item">
+      <div class="unit-dot ${u.status}"></div>
+      <div class="unit-info"><div class="unit-name">${u.name}</div><div class="unit-rank">${u.rank}</div></div>
+      <div class="unit-status-tag ${u.status}">${u.status}</div>
+    </div>`).join('');
+}
+
+function renderBrands() {
+  return Object.entries(BRANDS).map(([k,b])=>`
+    <div class="brand-item">
+      <div class="brand-row"><span class="brand-name">${b.name}</span><span class="brand-tier ${b.tier}">${b.tier}</span></div>
+      <div class="brand-row">
+        <div class="brand-stats">Radius: <span>${b.radius}m</span> &nbsp; Cooldown: <span>${b.cooldown}s</span></div>
+        <div class="brand-price">$${b.price.toLocaleString()}/mo</div>
+      </div>
+      <div class="brand-desc">${b.desc}</div>
+    </div>`).join('');
+}
+
+function updateStats() {
+  document.getElementById('s-active').textContent   = events.filter(e=>e.type==='critical'&&!e.resolved).length;
+  document.getElementById('s-props').textContent    = properties.length;
+  document.getElementById('s-units').textContent    = units.length;
+  document.getElementById('s-resolved').textContent = resolvedCount;
+}
+
+function setFilter(f,btn) {
+  filter=f;
+  document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderFeed();
+}
+
+function switchTab(tab,el) {
+  activeTab=tab;
+  document.querySelectorAll('.panel-tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('panel-content').innerHTML = tab==='units'?renderUnits():renderBrands();
+}
+
+function clickProp(id,el) {
+  document.querySelectorAll('.prop-item').forEach(p=>p.classList.remove('active'));
+  el.classList.add('active');
+}
+
+function resolveEvent(id) {
+  const ev=events.find(e=>e.id===id); if(!ev) return;
+  ev.resolved=true; ev.type='resolved'; ev.icon='✅';
+  ev.title=ev.title.replace("Intruder Detected","Alarm Resolved");
+  resolvedCount++;
+  renderFeed(); updateStats();
+  toast('green','ALARM RESOLVED','Event cleared from dispatch feed.');
+}
+
+function addEvent(type,icon,title,detail) {
+  const time=new Date().toTimeString().slice(0,8);
+  events.unshift({id:nextId++,type,icon,title,detail,time,resolved:false});
+  renderFeed(); updateStats();
+}
+
+function toast(type,title,body) {
+  const c=document.getElementById('toasts');
+  const t=document.createElement('div');
+  t.className=`toast ${type}`;
+  t.innerHTML=`<div class="toast-title">${title}</div><div class="toast-body">${body}</div>`;
+  c.appendChild(t);
+  setTimeout(()=>t.remove(),5000);
+}
+
+// Terminal
+function tLog(msg,color='') {
+  const out=document.getElementById('terminal-output');
+  const time=new Date().toTimeString().slice(0,8);
+  const line=document.createElement('div');
+  line.className='t-line';
+  line.innerHTML=`<span class="t-time">[${time}]</span><span class="t-msg ${color}">${msg}</span>`;
+  out.appendChild(line);
+  out.scrollTop=out.scrollHeight;
+}
+
+function clearTerminal() { document.getElementById('terminal-output').innerHTML=''; }
+
+function handleCommand(raw) {
+  const input=raw.trim(); if(!input) return;
+  tLog(`> ${input}`,'muted');
+  const parts=input.replace(/^\//,'').split(' ');
+  const cmd=parts[0].toLowerCase();
+  const args=parts.slice(1);
+
+  switch(cmd) {
+    case 'secinstall': {
+      const brand=args[0]?.toUpperCase();
+      if(!brand) {
+        tLog('Available alarm brands:','blue');
+        Object.entries(BRANDS).forEach(([k,b])=>{
+          tLog(`  ${k.padEnd(10)} [${b.tier}]  $${b.price.toLocaleString()}/mo  — ${b.desc}`);
+        });
+        tLog('Usage: /secinstall [BRAND]','muted');
+        return;
+      }
+      const b=BRANDS[brand];
+      if(!b){ tLog(`Unknown brand "${brand}". Use /secinstall to list brands.`,'red'); return; }
+      const target=properties.find(p=>p.status==='none'||p.status==='disarmed')||properties[0];
+      target.brand=brand; target.status='armed'; renderProps();
+      tLog(`[INSTALLED] ${b.name} (${b.tier}) on ${target.name}`,'green');
+      tLog(`Monthly: $${b.price.toLocaleString()} | Radius: ${b.radius}m | Cooldown: ${b.cooldown}s`,'blue');
+      addEvent('system','🔧',`Alarm Installed — <span class='hl-purple'>${target.name}</span>`,`BRAND: <span>${b.name}</span> &nbsp;|&nbsp; PLAN: <span>$${b.price.toLocaleString()}/mo</span>`);
+      toast('blue','ALARM INSTALLED',`${b.name} active on ${target.name}`);
+      break;
+    }
+    case 'secuninstall': {
+      const target=properties.find(p=>p.brand);
+      if(!target){ tLog('No alarm installed on any property.','red'); return; }
+      const old=target.brand; target.brand=null; target.status='none'; renderProps();
+      tLog(`[UNINSTALLED] Alarm removed from ${target.name}. Brand was: ${old}`,'orange');
+      addEvent('system','🔧',`Alarm Uninstalled — <span class='hl-red'>${target.name}</span>`,`BRAND REMOVED: <span>${old}</span>`);
+      break;
+    }
+    case 'alarmstatus': {
+      tLog('--- Property Alarm Status ---','blue');
+      properties.forEach(p=>{
+        if(p.status==='none'){ tLog(`  #${p.id} ${p.name}  [NO ALARM]`,'muted'); return; }
+        const c=p.status==='triggered'?'red':p.status==='armed'?'green':'orange';
+        tLog(`  #${p.id} ${p.name}  [${p.brand||'?'}]  ${p.status.toUpperCase()}`,c);
+      });
+      break;
+    }
+    case 'recentalarm': {
+      const recent=events.filter(e=>e.type==='critical'||e.type==='resolved').slice(0,8);
+      if(!recent.length){ tLog('No alarm events recorded.','muted'); return; }
+      tLog('--- Recent Alarms ---','blue');
+      recent.forEach(ev=>{
+        const c=ev.resolved?'green':'red';
+        const tag=ev.resolved?'[RESOLVED]':'[ACTIVE]';
+        tLog(`  ${tag}  ${ev.time}  ${ev.title.replace(/<[^>]+>/g,'')}`,c);
+      });
+      break;
+    }
+    case 'alarm': {
+      const action=args[0]?.toLowerCase();
+      if(action==='arm')       tLog('[ARMED] Alarm armed successfully.','green');
+      else if(action==='disarm') tLog('[DISARMED] Alarm disarmed.','orange');
+      else if(action==='status') {
+        properties.forEach(p=>{
+          tLog(`  ${p.name}: ${p.status.toUpperCase()}  ${p.brand?'['+p.brand+']':'[NO ALARM]'}`,
+            p.status==='armed'?'green':p.status==='triggered'?'red':'muted');
+        });
+      } else tLog('Usage: /alarm [arm|disarm|status]','muted');
+      break;
+    }
+    case 'resolvealarm': {
+      const active=events.find(e=>e.type==='critical'&&!e.resolved);
+      if(!active){ tLog('No active alarms to resolve.','muted'); return; }
+      resolveEvent(active.id);
+      tLog(`[RESOLVED] Alarm cleared.`,'green');
+      break;
+    }
+    case 'help': {
+      tLog('Available commands:','blue');
+      ['/secinstall [brand]     — Install alarm brand on property',
+       '/secuninstall           — Uninstall alarm',
+       '/alarmstatus            — Show all property alarm states',
+       '/recentalarm            — Show last triggered alarms',
+       '/alarm [arm|disarm|status]',
+       '/resolvealarm [id]      — Mark alarm as resolved',
+       '/help                   — Show this list'].forEach(l=>tLog('  '+l));
+      break;
+    }
+    default: tLog(`Unknown command "${cmd}". Type /help for a list.`,'red');
+  }
+}
+
+document.getElementById('terminal-input').addEventListener('keydown',function(e){
+  if(e.key==='Enter'){ handleCommand(this.value); this.value=''; }
+});
+
+// Simulation
+function simulateAlarm() {
+  const armed=properties.filter(p=>p.status==='armed');
+  if(!armed.length) return;
+  const prop=armed[Math.floor(Math.random()*armed.length)];
+  const suspect=intruders[Math.floor(Math.random()*intruders.length)];
+  const brand=prop.brand||'UNKNOWN';
+  prop.status='triggered'; renderProps();
+  addEvent('critical','🚨',`Intruder Detected — <span class='hl-red'>${prop.name}</span>`,
+    `SUSPECT: <span>${suspect}</span> &nbsp;|&nbsp; BRAND: <span>${brand}</span> &nbsp;|&nbsp; PROPERTY: <span>#${prop.id}</span>`);
+  tLog(`[ALARM] Intruder at ${prop.name} — Suspect: ${suspect}`,'red');
+  toast('red','⚠ ALARM TRIGGERED',`${prop.name} | Suspect: ${suspect}`);
+}
+
+function scheduleNext(){ setTimeout(()=>{ simulateAlarm(); scheduleNext(); }, 22000+Math.random()*13000); }
+
+setInterval(()=>document.getElementById('clock').textContent=new Date().toTimeString().slice(0,8),1000);
+document.getElementById('clock').textContent=new Date().toTimeString().slice(0,8);
+
+renderProps(); renderFeed(); updateStats();
+document.getElementById('panel-content').innerHTML=renderUnits();
+scheduleNext();
+tLog('AlarmSys Dispatch Terminal ready.','green');
+tLog('Type /help to see available commands.','muted');
+</script>
+</body>
+</html>
