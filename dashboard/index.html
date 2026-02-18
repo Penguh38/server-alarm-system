@@ -140,17 +140,17 @@
     .brand-desc { font-family:var(--body); font-size:0.66rem; color:var(--muted); margin-top:4px; line-height:1.5; }
 
     /* Terminal */
-    .terminal-section { border-top:1px solid var(--border); background:var(--bg); display:flex; flex-direction:column; flex-shrink:0; }
-    .terminal-header { padding:7px 14px; border-bottom:1px solid var(--border); font-family:var(--mono); font-size:0.56rem; letter-spacing:2px; text-transform:uppercase; color:var(--muted); display:flex; justify-content:space-between; align-items:center; }
+    .terminal-section { border-top:2px solid var(--blue); background:#050810; display:flex; flex-direction:column; flex-shrink:0; }
+    .terminal-header { padding:7px 14px; border-bottom:1px solid rgba(77,166,255,0.15); font-family:var(--mono); font-size:0.56rem; letter-spacing:2px; text-transform:uppercase; color:var(--blue); display:flex; justify-content:space-between; align-items:center; background:rgba(77,166,255,0.04); }
     .terminal-clear { font-family:var(--mono); font-size:0.54rem; color:var(--muted); background:transparent; border:1px solid var(--border2); border-radius:3px; padding:2px 8px; cursor:pointer; letter-spacing:1px; transition:all 0.12s; }
     .terminal-clear:hover { color:var(--red); border-color:var(--red); }
-    .terminal-output { height:130px; overflow-y:auto; padding:7px 14px; font-family:var(--mono); font-size:0.62rem; line-height:1.8; }
+    .terminal-output { height:110px; overflow-y:auto; padding:8px 14px; font-family:var(--mono); font-size:0.62rem; line-height:1.8; background:#050810; }
     .t-line { display:flex; gap:8px; }
     .t-time { color:var(--muted); flex-shrink:0; }
     .t-msg { color:var(--text); }
     .t-msg.red { color:var(--red); } .t-msg.green { color:var(--green); } .t-msg.blue { color:var(--blue); }
     .t-msg.orange { color:var(--orange); } .t-msg.purple { color:var(--purple); } .t-msg.muted { color:var(--muted); }
-    .terminal-input-row { display:flex; align-items:center; border-top:1px solid var(--border); padding:6px 14px; gap:8px; }
+    .terminal-input-row { display:flex; align-items:center; border-top:1px solid rgba(77,166,255,0.2); padding:7px 14px; gap:8px; background:rgba(77,166,255,0.04); flex-shrink:0; }
     .terminal-prompt { font-family:var(--mono); font-size:0.68rem; color:var(--green); flex-shrink:0; }
     .terminal-input { flex:1; background:transparent; border:none; outline:none; color:var(--text); font-family:var(--mono); font-size:0.68rem; caret-color:var(--green); }
 
