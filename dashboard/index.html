@@ -467,6 +467,44 @@ function handleCommand(raw) {
        '/help                   — Show this list'].forEach(l=>tLog('  '+l));
       break;
     }
+    case 'triggeralarm': {
+      const armed = properties.filter(p=>p.status==='armed');
+      if(!armed.length){ tLog('No armed properties to trigger.','muted'); return; }
+      const prop = armed[Math.floor(Math.random()*armed.length)];
+      const suspect = intruders[Math.floor(Math.random()*intruders.length)];
+      const brand = prop.brand || 'UNKNOWN';
+
+      // Flash the property red
+      prop.status = 'triggered';
+      renderProps();
+
+      // Step by step simulation with delays
+      tLog(`[PROXIMITY DETECTED] Player ${suspect} entered ${prop.name}`,'orange');
+
+      setTimeout(()=>{
+        tLog(`[ALARM SYSTEM] ${brand} alarm triggered — checking owner...`,'blue');
+      }, 600);
+
+      setTimeout(()=>{
+        tLog(`[NOTIFY OWNER] SMS sent to ${prop.owner}`,'blue');
+      }, 1200);
+
+      setTimeout(()=>{
+        tLog(`[BROADCAST] All security units notified`,'blue');
+      }, 1800);
+
+      setTimeout(()=>{
+        tLog(`[ALARM] Intruder at ${prop.name} | Suspect: ${suspect} | Brand: ${brand}`,'red');
+        addEvent('critical','🚨',
+          `Intruder Detected — <span class='hl-red'>${prop.name}</span>`,
+          `SUSPECT: <span>${suspect}</span> &nbsp;|&nbsp; BRAND: <span>${brand}</span> &nbsp;|&nbsp; PROPERTY: <span>#${prop.id}</span>`
+        );
+        toast('red','⚠ ALARM TRIGGERED', `${prop.name} | Suspect: ${suspect}`);
+      }, 2400);
+
+      break;
+    }
+
     default: tLog(`Unknown command "${cmd}". Type /help for a list.`,'red');
   }
 }
