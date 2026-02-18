@@ -329,19 +329,19 @@ namespace AlarmSystem
         }
 
         // /stopalarm — stops the alarm of the property the player is currently standing at
-        [Command("stopalarm")]
-        public void StopAlarmCommand(Client player)
+        [Command("removealarm")]
+        public void RemoveAlarmCommand(Client player)
         {
             // Find nearest property within range that has a triggered alarm
             Property nearby = Properties.Values
                 .Where(p => p.AlarmInstalled && p.AlarmTriggeredAt.HasValue &&
-                            player.Position.DistanceTo(p.Position) <= p.DetectionRadius + 5f)
+                            player.Position.DistanceTo(p.Position) <= p.DetectionRadius)
                 .OrderBy(p => player.Position.DistanceTo(p.Position))
                 .FirstOrDefault();
 
             if (nearby == null)
             {
-                player.SendChatMessage("~r~No triggered alarm nearby. Move closer to the property.");
+                player.SendChatMessage("~r~No triggered alarm detected. You must be inside the property to stop the alarm.");
                 return;
             }
 

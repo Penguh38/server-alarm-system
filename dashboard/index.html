@@ -258,8 +258,8 @@ let events = [
   { id:1, type:"critical", icon:"🚨", title:`Intruder Detected — <span class='hl-red'>Vinewood Hills Villa</span>`, detail:`SUSPECT: <span>Petrov_K</span> &nbsp;|&nbsp; BRAND: <span>NEXUS</span> &nbsp;|&nbsp; PROPERTY: <span>#1</span>`, time:"02:14:37", resolved:false },
   { id:2, type:"system",   icon:"🔧", title:`/secinstall — <span class='hl-purple'>Paleto Bay Warehouse</span>`,     detail:`OWNER: <span>Novak_J</span> &nbsp;|&nbsp; BRAND: <span>FORTRESS</span> &nbsp;|&nbsp; PLAN: <span>$8,000/mo</span>`,  time:"02:11:05", resolved:false },
   { id:3, type:"info",     icon:"🔒", title:`/secinstall — <span class='hl-blue'>Del Perro Penthouse</span>`,         detail:`OWNER: <span>Marchetti_L</span> &nbsp;|&nbsp; BRAND: <span>VIPER</span>`,                                         time:"02:09:22", resolved:false },
-  { id:4, type:"resolved", icon:"✅", title:`/resolvealarm — <span class='hl-green'>Sandy Beach Loft</span>`,        detail:`CLEARED BY: <span>Thompson_R</span> &nbsp;|&nbsp; RESPONSE: <span>4m 12s</span>`,                                  time:"01:58:22", resolved:true  },
-  { id:5, type:"resolved", icon:"✅", title:`/resolvealarm — <span class='hl-green'>Mirror Park Residence</span>`,   detail:`CLEARED BY: <span>Park_S</span> &nbsp;|&nbsp; RESPONSE: <span>2m 58s</span>`,                                      time:"01:30:47", resolved:true  },
+  { id:4, type:"resolved", icon:"✅", title:`/stopalarm — <span class='hl-green'>Sandy Beach Loft</span>`,        detail:`CLEARED BY: <span>Thompson_R</span> &nbsp;|&nbsp; RESPONSE: <span>4m 12s</span>`,                                  time:"01:58:22", resolved:true  },
+  { id:5, type:"resolved", icon:"✅", title:`/stopalarm — <span class='hl-green'>Mirror Park Residence</span>`,   detail:`CLEARED BY: <span>Park_S</span> &nbsp;|&nbsp; RESPONSE: <span>2m 58s</span>`,                                      time:"01:30:47", resolved:true  },
 ];
 
 let filter = 'all', resolvedCount = 2, nextId = 6, activeTab = 'units';
@@ -439,10 +439,10 @@ function handleCommand(raw) {
           tLog(`  ${p.name}: ${p.status.toUpperCase()}  ${p.brand?'['+p.brand+']':'[NO ALARM]'}`,
             p.status==='armed'?'green':p.status==='triggered'?'red':'muted');
         });
-      } else tLog('Usage: /alarm [status]  |  Use /stopalarm to stop a triggered alarm.','muted');
+      } else tLog('Usage: /alarm [status]  |  Use /removealarm when inside the property.','muted');
       break;
     }
-    case 'stopalarm': {
+    case 'removealarm': {
       // In dashboard demo: stops the first triggered property (simulates being nearby)
       const triggered=properties.find(p=>p.status==='triggered');
       if(!triggered){ tLog('No triggered alarm nearby.','muted'); return; }
@@ -464,7 +464,6 @@ function handleCommand(raw) {
        '/alarmstatus            — Show all property alarm states',
        '/recentalarm            — Show last triggered alarms',
        '/alarm [arm|disarm|status]',
-       '/resolvealarm [id]      — Mark alarm as resolved',
        '/help                   — Show this list'].forEach(l=>tLog('  '+l));
       break;
     }
