@@ -256,10 +256,10 @@ const units = [
 
 let events = [
   { id:1, type:"critical", icon:"🚨", title:`Intruder Detected — <span class='hl-red'>Vinewood Hills Villa</span>`, detail:`SUSPECT: <span>Petrov_K</span> &nbsp;|&nbsp; BRAND: <span>NEXUS</span> &nbsp;|&nbsp; PROPERTY: <span>#1</span>`, time:"02:14:37", resolved:false },
-  { id:2, type:"system",   icon:"🔧", title:`Alarm Installed — <span class='hl-purple'>Paleto Bay Warehouse</span>`,  detail:`OWNER: <span>Novak_J</span> &nbsp;|&nbsp; BRAND: <span>FORTRESS</span> &nbsp;|&nbsp; PLAN: <span>$8,000/mo</span>`,  time:"02:11:05", resolved:false },
-  { id:3, type:"info",     icon:"🔐", title:`Alarm Armed — <span class='hl-blue'>Del Perro Penthouse</span>`,         detail:`OWNER: <span>Marchetti_L</span> &nbsp;|&nbsp; BRAND: <span>VIPER</span>`,                                         time:"02:09:22", resolved:false },
-  { id:4, type:"resolved", icon:"✅", title:`Alarm Resolved — <span class='hl-green'>Sandy Beach Loft</span>`,        detail:`CLEARED BY: <span>Thompson_R</span> &nbsp;|&nbsp; RESPONSE: <span>4m 12s</span>`,                                  time:"01:58:22", resolved:true  },
-  { id:5, type:"resolved", icon:"✅", title:`Alarm Resolved — <span class='hl-green'>Mirror Park Residence</span>`,   detail:`CLEARED BY: <span>Park_S</span> &nbsp;|&nbsp; RESPONSE: <span>2m 58s</span>`,                                      time:"01:30:47", resolved:true  },
+  { id:2, type:"system",   icon:"🔧", title:`/secinstall — <span class='hl-purple'>Paleto Bay Warehouse</span>`,     detail:`OWNER: <span>Novak_J</span> &nbsp;|&nbsp; BRAND: <span>FORTRESS</span> &nbsp;|&nbsp; PLAN: <span>$8,000/mo</span>`,  time:"02:11:05", resolved:false },
+  { id:3, type:"info",     icon:"🔒", title:`/secinstall — <span class='hl-blue'>Del Perro Penthouse</span>`,         detail:`OWNER: <span>Marchetti_L</span> &nbsp;|&nbsp; BRAND: <span>VIPER</span>`,                                         time:"02:09:22", resolved:false },
+  { id:4, type:"resolved", icon:"✅", title:`/resolvealarm — <span class='hl-green'>Sandy Beach Loft</span>`,        detail:`CLEARED BY: <span>Thompson_R</span> &nbsp;|&nbsp; RESPONSE: <span>4m 12s</span>`,                                  time:"01:58:22", resolved:true  },
+  { id:5, type:"resolved", icon:"✅", title:`/resolvealarm — <span class='hl-green'>Mirror Park Residence</span>`,   detail:`CLEARED BY: <span>Park_S</span> &nbsp;|&nbsp; RESPONSE: <span>2m 58s</span>`,                                      time:"01:30:47", resolved:true  },
 ];
 
 let filter = 'all', resolvedCount = 2, nextId = 6, activeTab = 'units';
@@ -400,7 +400,7 @@ function handleCommand(raw) {
       target.brand=brand; target.status='armed'; renderProps();
       tLog(`[INSTALLED] ${b.name} (${b.tier}) on ${target.name}`,'green');
       tLog(`Monthly: $${b.price.toLocaleString()} | Radius: ${b.radius}m | Cooldown: ${b.cooldown}s`,'blue');
-      addEvent('system','🔧',`Alarm Installed — <span class='hl-purple'>${target.name}</span>`,`BRAND: <span>${b.name}</span> &nbsp;|&nbsp; PLAN: <span>$${b.price.toLocaleString()}/mo</span>`);
+      addEvent('system','🔧',`/secinstall — <span class='hl-purple'>${target.name}</span>`,`BRAND: <span>${b.name}</span> &nbsp;|&nbsp; PLAN: <span>$${b.price.toLocaleString()}/mo</span>`);
       toast('blue','ALARM INSTALLED',`${b.name} active on ${target.name}`);
       break;
     }
@@ -409,7 +409,7 @@ function handleCommand(raw) {
       if(!target){ tLog('No alarm installed on any property.','red'); return; }
       const old=target.brand; target.brand=null; target.status='none'; renderProps();
       tLog(`[UNINSTALLED] Alarm removed from ${target.name}. Brand was: ${old}`,'orange');
-      addEvent('system','🔧',`Alarm Uninstalled — <span class='hl-red'>${target.name}</span>`,`BRAND REMOVED: <span>${old}</span>`);
+      addEvent('system','🔧',`/secuninstall — <span class='hl-red'>${target.name}</span>`,`BRAND REMOVED: <span>${old}</span>`);
       break;
     }
     case 'alarmstatus': {
@@ -434,23 +434,29 @@ function handleCommand(raw) {
     }
     case 'alarm': {
       const action=args[0]?.toLowerCase();
-      if(action==='arm')       tLog('[ARMED] Alarm armed successfully.','green');
-      else if(action==='disarm') tLog('[DISARMED] Alarm disarmed.','orange');
-      else if(action==='status') {
+      if(action==='status') {
         properties.forEach(p=>{
           tLog(`  ${p.name}: ${p.status.toUpperCase()}  ${p.brand?'['+p.brand+']':'[NO ALARM]'}`,
             p.status==='armed'?'green':p.status==='triggered'?'red':'muted');
         });
-      } else tLog('Usage: /alarm [arm|disarm|status]','muted');
+      } else tLog('Usage: /alarm [status]  |  Use /stopalarm to stop a triggered alarm.','muted');
       break;
     }
-    case 'resolvealarm': {
+    case 'stopalarm': {
+      // In dashboard demo: stops the first triggered property (simulates being nearby)
+      const triggered=properties.find(p=>p.status==='triggered');
+      if(!triggered){ tLog('No triggered alarm nearby.','muted'); return; }
+      triggered.status='armed';
+      renderProps();
       const active=events.find(e=>e.type==='critical'&&!e.resolved);
-      if(!active){ tLog('No active alarms to resolve.','muted'); return; }
-      resolveEvent(active.id);
-      tLog(`[RESOLVED] Alarm cleared.`,'green');
+      if(active){ active.resolved=true; active.type='resolved'; active.icon='🔕'; active.title=active.title.replace('Intruder Detected','Alarm Stopped'); resolvedCount++; }
+      renderFeed(); updateStats();
+      tLog(`[STOPPED] Alarm on ${triggered.name} stopped. Security notified — no response needed.`,'orange');
+      addEvent('info','🔕',`/stopalarm — <span class='hl-blue'>${triggered.name}</span>`,`OWNER ACTION: <span>stopped on-site</span> &nbsp;|&nbsp; SECURITY: <span>no response needed</span>`);
+      toast('blue','ALARM STOPPED',`${triggered.name} — owner on-site.`);
       break;
     }
+
     case 'help': {
       tLog('Available commands:','blue');
       ['/secinstall [brand]     — Install alarm brand on property',

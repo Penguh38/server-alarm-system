@@ -33,29 +33,29 @@ Six tiers with different detection radius, cooldown, and monthly price:
 
 **Owner:**
 ```
-/secinstall [brand]        install alarm (no arg = shows brand list)
-/secuninstall              remove alarm
-/alarm arm|disarm|status   control your alarm
+/secinstall [brand]    install alarm on your property (no arg = shows all brands with prices)
+/secuninstall          remove alarm from your property
+/stopalarm             stop a triggered alarm — use this when it's a false alarm or you're at the door yourself
+/alarm status          check current alarm state
 ```
 
 **Security / Admin:**
 ```
-/alarmstatus               all properties and their current state
-/recentalarm               last 10 triggered alarms
-/resolvealarm [id]         mark alarm as resolved
+/alarmstatus           shows all properties and their current alarm state
+/recentalarm           last 10 triggered alarms with suspect names and timestamps
 ```
 
 **Admin only:**
 ```
-/createproperty [name]     register property at your position
-/setowner [id] [name]      assign owner by social club name
+/createproperty [name]    register a new property at your current position
+/setowner [id] [name]     assign owner to a property by social club name
 ```
 
 ---
 
 ## Setup
 
-Drop `AlarmSystem.cs` into your C# resource folder and register it. Seed properties in `OnResourceStart` or use `/createproperty` in-game.
+Drop `AlarmSystem.cs` into your C# resource folder and register it. Properties can be seeded in `OnResourceStart` or added in-game via `/createproperty`.
 
 Change which factions get notified in `SecurityGroups.NotifiedFactions`:
 
@@ -70,7 +70,7 @@ public static readonly List<string> NotifiedFactions = new List<string>
 
 ## Dashboard
 
-Standalone web panel for dispatchers — shows active alarms, property list, online units, and a terminal where you can test the commands live.
+Standalone web dispatch panel showing live alarm events, property statuses, and online units. Includes an interactive terminal where you can test all commands and see how they behave.
 
 → https://server-alarm-system.vercel.app
 

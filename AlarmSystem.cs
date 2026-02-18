@@ -317,49 +317,52 @@ namespace AlarmSystem
             if (prop == null) { player.SendChatMessage("~r~You don't own any registered property."); return; }
             if (!prop.AlarmInstalled) { player.SendChatMessage("~r~No alarm installed. Use /secinstall to install one."); return; }
 
-            switch (action.ToLower())
+            if (action.ToLower() == "status")
             {
-                case "arm":
-                    prop.AlarmArmed = true;
-                    player.SendChatMessage($"~g~Alarm ARMED — {prop.Name} [{prop.AlarmBrand}]");
-                    break;
-                case "disarm":
-                    prop.AlarmArmed = false;
-                    prop.AlarmTriggeredAt = null;
-                    player.SendChatMessage($"~y~Alarm DISARMED — {prop.Name}");
-                    break;
-                case "status":
-                    string s = prop.AlarmArmed ? "~g~ARMED" : "~y~DISARMED";
-                    player.SendChatMessage($"~w~{prop.Name} [{prop.AlarmBrand}]: {s}");
-                    break;
-                default:
-                    player.SendChatMessage("~r~Usage: /alarm [arm|disarm|status]");
-                    break;
+                string s = prop.AlarmArmed ? "~g~ARMED" : "~y~STOPPED";
+                player.SendChatMessage($"~w~{prop.Name} [{prop.AlarmBrand}]: {s}");
+            }
+            else
+            {
+                player.SendChatMessage("~r~Usage: /alarm [status] | Use /stopalarm to stop a triggered alarm.");
             }
         }
 
-        // -------------------------------------------------------
-        // /resolvealarm
-        // -------------------------------------------------------
-
-        [Command("resolvealarm")]
-        public void ResolveAlarmCommand(Client player, int propertyId)
+        // /stopalarm — stops the alarm of the property the player is currently standing at
+        [Command("stopalarm")]
+        public void StopAlarmCommand(Client player)
         {
-            if (!IsSecurityPersonnel(player) && !IsAdmin(player)) { player.SendChatMessage("~r~No permission."); return; }
+            // Find nearest property within range that has a triggered alarm
+            Property nearby = Properties.Values
+                .Where(p => p.AlarmInstalled && p.AlarmTriggeredAt.HasValue &&
+                            player.Position.DistanceTo(p.Position) <= p.DetectionRadius + 5f)
+                .OrderBy(p => player.Position.DistanceTo(p.Position))
+                .FirstOrDefault();
 
-            var active = AlarmLog.Where(e => e.PropertyId == propertyId && !e.Resolved).ToList();
-            if (!active.Any()) { player.SendChatMessage("~y~No active alarm for that property."); return; }
+            if (nearby == null)
+            {
+                player.SendChatMessage("~r~No triggered alarm nearby. Move closer to the property.");
+                return;
+            }
 
+            // Only the owner can stop it
+            if (nearby.OwnerId != player.SocialClubName && !IsAdmin(player))
+            {
+                player.SendChatMessage("~r~You are not the owner of this property.");
+                return;
+            }
+
+            nearby.AlarmArmed = false;
+            nearby.AlarmTriggeredAt = null;
+
+            var active = AlarmLog.Where(e => e.PropertyId == nearby.Id && !e.Resolved).ToList();
             foreach (var evt in active) evt.Resolved = true;
 
-            if (Properties.TryGetValue(propertyId, out Property prop))
-            {
-                prop.AlarmTriggeredAt = null;
-                NotifySecurityTeam($"~g~[RESOLVED] {prop.Name} cleared by {player.SocialClubName}.");
-            }
-
-            player.SendChatMessage($"~g~Alarm #{propertyId} resolved.");
+            player.SendChatMessage($"~y~[STOPPED] Alarm stopped on {nearby.Name}. Security has been notified.");
+            NotifySecurityTeam($"~y~[ALARM STOPPED] {nearby.Name} — stopped by owner {player.SocialClubName}. No response needed.");
         }
+
+        // -------------------------------------------------------
 
         // -------------------------------------------------------
         // Proximity loop
